@@ -14,3 +14,5 @@ type: Switch
 standard: global
 ---
 If the plug keeps turning off for apparently no reason it is likely the wrong factory temperature calibration. Enter command ADCParam1 2, 4000,80000,4250,1 and restart the plug to fix.
+
+Using GPIO5 as ButtonN results in sporadic resets of tasmota after a while. To use a button-switch set switchmode for switch1 to 4 for inverted pushbutton (default 0, 1 = toggle) by typing SwitchMode1 4 in console.
