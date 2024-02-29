@@ -36,7 +36,8 @@ N: Neutral AC
 
 *Installation of Tasmota (and maybe a following reset 5) changes MAC from Vendor 48:E1:E9 (Chengdu Meross Technology Co., Ltd.) to 48:E1:E9 (Espressif Inc.). Also the last 3 Digits are completly different.
 
-* in original firmware button on the backside of the Refoss R10 also switches relais. Tasmota by using the template '{"NAME":"Refoss-R10","GPIO":[0,1,3104,0,224,192,0,0,2720,0,0,0,0,4736],"FLAG":0,"BASE":18}' button on the backside of the PCB has no function.  
+* in original firmware button on the backside of the Refoss R10 also switches relais. Tasmota by using the template '{"NAME":"Refoss-R10","GPIO":[0,1,3104,0,224,192,0,0,2720,0,0,0,0,4736],"FLAG":0,"BASE":18}' button on the backside of the PCB has no function. Measurment shows button connect GPIO14 to GND. Alternative template{"NAME":"Refoss-R10","GPIO":[1,1,3104,1,224,192,0,0,2720,1,32,1,1,4736],"FLAG":0,"BASE":18} works fine.
+ 
 
 ##Notes
 
