@@ -34,6 +34,8 @@ N: Neutral AC
 
 *Does not schows Voltage, Current, Apparent Power, Reactive Power and Power Factor. Only Active Power and Energy Today/Yesterday/Total are showed (Tasmota 13.4.0). Seems to be a issue of CSE7766 / BL0937. May be an issue regarding to power monitoring calibration.
 
+*Installation of Tasmota (and maybe a following reset 5) changes MAC from Vendor 48:E1:E9 (Chengdu Meross Technology Co., Ltd.) to 48:E1:E9 (Espressif Inc.). Also the last 3 Digits are completly different.
+
 ##Notes
 
 *Hint: Do not change GPIO 5 to ButtonN 1. GPIO as ButtonN 1 results in sporadic resets of tasmota after a while (Tasmota 13.4.0). May be a result of screw connection header using 220V AC
