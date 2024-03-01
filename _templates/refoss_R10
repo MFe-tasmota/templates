@@ -13,6 +13,8 @@ category: switch
 type: Switch
 standard: global
 ---
+SAFETY HAZARD: The digital GND is connected directly to mains voltage "L", so the GPIOs become LIVE during normal operation. 
+
 ##Connection
 
 ![Connection diagramm by Refoss](/assets/device_images/refoss_r10_connection-diagram1.webp)
