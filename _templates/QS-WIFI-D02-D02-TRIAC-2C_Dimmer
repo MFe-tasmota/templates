@@ -1,0 +1,340 @@
+---
+date_added: 2025-12-08
+title: QS-WiFi-D02-TRIAC-2C 150W Dimmer Module
+category: relay
+type: Dimmer Module
+standard: global
+
+
+template9: '{"NAME":"QS-WIFI-D02-C2","GPIO":[1,3200,1,3232,417,353,1,1,416,352,0,0,1,0],"FLAG":0,"BASE":1}'
+---
+The **Wi-Fi Dimmer Module 150W QS-WiFi-D02-TRIAC-2** is an in-wall push-button dimmer switch 
+
+Art. No. **QS-WIFI-D02-TRIAC-2C**  
+- **Trailing-Edge Phase Dimmer**, definitely not TRIAC but Power MOSFET driven 
+- for **dimmable LED light bulbs, dimmable power supplies, incandescent/halogen bulbs,...**
+
+### Technical Data:
+- Smart Wi-Fi Push-Button Dimmer Module
+- Rated Voltage	AC 220-240V / 50Hz
+- Load max. 150W for LED lamp
+- Size LxWxH 46mm x 46mm x 22mm
+
+The Dimmer has a **LM1 ESP8266** module with 1MB Flash onboard, combined with a **STM8 MCU** on a separate board.
+
+more sein here: https://github.com/arendst/Tasmota/issues/5737#issuecomment-581680784
+
+
+### Flashing Guide
+
+By soldering Serial Connetor to ESP8266 pins.
+
+
+#### Serial
+- ⚠️️ **Special Attention** ⚠️️ 
+- **Do not connect AC power and the serial connection at the same time!** 
+- The dimmer circuit is directly connected to the AC wires!
+
+The case can easily be opened by pressing both sides of the lower half of the case.
+
+It's possible to flash the ESP8266 when the PCB is not desoldered, but it is a bit difficult to reach RX and TX.
+
+https://user-images.githubusercontent.com/57617605/73716852-7c64f600-4718-11ea-8b44-15e5e609d88a.jpg
+
+
+
+### Configuration
+
+| GPIO | Component |
+| -- | -- |
+| 1 |  Serial Tx (148) |
+| 3 |  Serial Rx (149) |
+| 4 |  PWM2 (37)<BR>(virtual PWM, or use other unused GPIO) |
+| 5 | Counter2 (42) |
+| 12 | PWM1 (37)<BR>(virtual PWM, or use other unused GPIO) |
+| 13 | Counter1 (42) |
+
+### Wiring Diagram:
+
+The **switch inputs** S1 and S2 are intended for push-button switch control and detects the mains frequency when the button is pressed. This makes it special and therefore it requires a Tasmota **Script** for **ON/OFF** and **HOLD** (long press) dimming operation.
+
+To use the script, you need Tasmota with [Scripting](https://tasmota.github.io/docs/Scripting-Language) enabled. [Download](https://github.com/tasmota/install/tree/main/firmware/unofficial) unofficial precompiled firmware from development branch.
+
+Once the device is flashed with Tasmota, open `Configuration` -> `Edit script` in the web UI and paste the contents of the script in the window. Then set the `script enable` checkbox and push `Restart`.
+
+To hide "Counter1" in the WebUI you can enter `WebSensor1 0` on the Tasmota Console.
+
+
+
+### How it works:
+Whenever the button is pressed there are 50/60 Hz pulses on the `S1/S2` switch input. The frequency detection circuit (below) is connected to GPIO13 of the ESP8266 chip.
+
+![pushbutton-input](https://user-images.githubusercontent.com/36734573/61955930-5d90e480-afbc-11e9-8d7e-00ac526874d3.png)
+
+These pulses must be processed as a switching signal with a counter. The ESP8266 then sends commands accordingly via the hardware serial interface for dimming operation, which are handled by a second microcontroller (STM8S003F3 MCU). The serial communication at 9600 baud is simple, just one command with changing brightness `xx` values: `FF 55 xx 05 DC 0A`
+
+### What the Script does:
+Switching in Tasmota is usually done by High/Low (+3.3V/GND) changes on a GPIO. Here, however, this is achieved by a pulse frequency when connected to a GPIO. These pulses are captured by `Counter1/Counter2`  in Tasmota.
+
+- When the **light is OFF** and there is a **short period** of pulses **->** then turn the light **ON** at the previous dimmer level.
+- When the **light is ON** and there is a **short period** of pulses **->** then turn the light **OFF**.
+- When there is a longer period of pulses (i.e., **HOLD**) **->** toggle dimming direction and then **adjust the brightness level** as long as the button is pressed or until the limits are reached.
+
+In the **Data Section** `>D` at the beginning of the script, the following initialization variables may be changed:
+- **dim step** -> `1..5` - sets the dimming increment value
+- **dim multiplier** -> `1..2.55` - values lower than 2.55 reduce the dimmer range (100..255)
+- **dim lower limit** -> min `0` - lower limit for the dimmer value for push-button operation (set according to your bulb) 
+- **dim upper limit** -> max `100` - upper limit for the dimmer value for push-button operation (set according to your bulb) 
+- **start dim level** -> `0..100` - initial dimmer level after power-up or restart 
+
+### Further Information:
+[**Support for Wi-Fi Dimmer?** #5737](https://github.com/arendst/Sonoff-Tasmota/issues/5737)  
+[**Switching by Mains Power Frequency** #6085](https://github.com/arendst/Sonoff-Tasmota/issues/6085)  
+
+### Additional Pictures:
+
+### Script:
+>D
+sw1=0 
+sw2=0 
+x=0
+cn1=0 
+cn2=0 
+tm1=0 
+tm2=0 
+h1=0  
+h2=0  
+t1=0
+t2=0
+sl1=0
+sl2=0
+di=""
+di2=""
+pl=2 
+pu=10
+dd1=0
+dd2=0
+mp=2.2
+sp=2
+sp2=2
+ll=8
+ll2=8
+ul=100
+ul2=99
+scl=0
+dv1=70
+dv2=70
+tmp=0
+
+>B
+=>Power0 0
+=>Power1 0
+=>Power2 0
+=>Counter1 0
+=>Counter2 0
+->Baudrate 9600
+sl1=dv1
+sl2=dv2
+=>Channel1 %dv1%
+=>Channel2 %dv2%
+=#sd1(dv1)
+=#sd2(dv2)
+delay(1000)
+=#sd1(0)
+=#sd2(0)
+
+>F
+cn1=pc[1] 
+cn2=pc[2] 
+
+if chg[cn1]>0 {
+sw1=1
+} else {
+sw1=0
+}
+
+if chg[cn2]>0 {
+sw2=1
+} else {
+sw2=0
+}
+
+tm1+=1  ; tm1 um 1 erhöhen
+tm2+=1  ; tm2 um 1 erhöhen
+
+;short switch press / power toogle
+if sw1==0  ; switch actually not pressed
+and tm1>pl  ; tm1 between short press low limit p1 und up limit pu
+and tm1<pu 
+{
+t1^=1 ;toogle power variable
+=#sd1(dv1*t1)
+=>Power1 %t1%
+}
+
+if sw2==0 ; sw2 not pressed
+and tm2>pl  ; tm1 between short press low limit p1 und up limit pu
+and tm2<pu 
+{
+t2^=1  ;toogle power variable
+=#sd2(dv2*t2)
+=>Power2 %t2% 
+}
+
+
+;long switch press
+if sw1>0 {
+if tm1>pu {
+h1=1
+
+;dim on out of state off
+if t1==0 {
+dd1=1
+dv1=ll-sp
+t1=1
+=>Power1 1 ;change PowerState of virtual relay 1
+=#sd1(ll)
+;dstmp=dstp
+;dstp=1
+}
+
+;dim if on&hold
+if t1>0 {  ;t1 ist an
+if dd1>0 {
+dv1+=sp
+if dv1>ul {
+dv1=ul
+}
+} else {
+dv1-=sp
+if dv1<ll {
+dv1=ll
+}
+}
+=#sd1(dv1)
+}
+}
+} else {  ;sw1 actuyally not pressed
+tm1=0
+if h1>0 { ;sw1 lng prssd bfr
+h1=0
+dd1^=1 ; tgle dim drctn
+}
+
+;long switch press 2
+if sw2>0 {
+if tm2>pu {
+h2=1
+
+;dim on out of state off
+if t2==0 {
+dd2=1
+dv2=ll2-sp2
+t2=1
+=>Power2 1 ;chng PowerState virtul pwm
+=#sd2(ll2)
+;dstmp=dstp
+;dstp=1
+}
+
+;dim if on&hold
+if t2>0 { 
+if dd2>0 {
+dv2+=sp2
+if dv2>ul2 {
+dv2=ul2
+}
+} else {
+dv2-=sp2
+if dv2<ll2 {
+dv2=ll2
+}
+}
+=#sd2(dv2)
+}
+}
+} else {  
+tm2=0
+if h2>0 { ;sw1 lng prssd bfre
+h2=0
+dd2^=1 ; tgle dim drctn
+}
+
+:change dim level in WebUi
+if chg[dv1]>0 {
+if pwr[1]<1 ; pwr[1] is state off
+{
+=>Power1 1
+t1=1
+}
+=#sd1(dv1)
+=>Channel1 %dv1%
+}
+
+if chg[dv2]>0 {
+if pwr[2]<1
+{
+=>Power2 1
+t2=1
+}
+=#sd2(dv2)
+=>Channel2 %dv2%
+}
+
+>W
+sl(%ll% %ul% dv1 "%ll%" "%dv1%" "%ul%")
+sl(%ll2% %ul2% dv2 "%ll2%" "%dv2%" "%ul2%")
+
+>E
+sl1=Channel1
+sl2=Channel2
+
+if chg[sl1]>0
+{
+if sl1>ll
+{dv1=sl1
+else
+dv1=ll
+}
+}
+
+if chg[sl2]>0
+{
+if sl2>ll2
+{
+dv2=sl2
+else
+dv2=ll2
+}
+}
+
+>P
+; on/off webui
+if pwr[1]>0
+{
+t1=1
+=#sd1(dv1)
+} else {
+t1=0
+=#sd1(0)
+}
+
+if pwr[2]>0
+{
+t2=1
+=#sd2(dv2)
+} else {
+t2=0
+=#sd2(0)
+}
+
+; subroutine
+#sd1(x)
+di="FF5501"+hn(x*mp)+"0000000A"
+->SerialSend5 %di%
+=>Publish tele/tasmota_0A6124/RESULT {"Channel1": %x%}
+#sd2(x)
+di2="FF550200"+hn(x*mp)+"00000A"
+->SerialSend5 %di2%
+=>Publish tele/tasmota_0A6124/RESULT {"Channel2": %x%}
+#
